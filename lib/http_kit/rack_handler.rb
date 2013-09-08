@@ -23,11 +23,11 @@ module HttpKit
       env["rack.multiprocess"]    = false
       env["rack.run_once"]        = false
       env["REQUEST_METHOD"]       = req.method.KEY.to_s.gsub(':', '').upcase
-      env["REQUEST_PATH"]         = ""
-      env["PATH_INFO"]            = ""
-      env["REQUEST_URI"]          = req.uri
+      env["REQUEST_PATH"]         = req.uri
+      env["PATH_INFO"]            = req.uri
+      env["REQUEST_URI"]          = "http://%s:%s%s" % [req.serverName, req.serverPort.to_s, req.uri]
       env["HTTP_VERSION"]         = "HTTP/1.1"
-      env["HTTP_HOST"]            = "localhost:8080"
+      env["HTTP_HOST"]            = "%s:%s" % [req.serverName, req.serverPort.to_s]
       env["HTTP_CONNECTION"]      = "keep-alive"
       env["HTTP_ACCEPT"]          = "*/*"
       env["GATEWAY_INTERFACE"]    = "CGI/1.2"
