@@ -12,7 +12,7 @@ class HelloWorldHandler
     resp = [
           Java::ClojureLang::Keyword.intern("status")  , 200,
           Java::ClojureLang::Keyword.intern("headers") , headers,
-          Java::ClojureLang::Keyword.intern("body")    , "hello HTTP! #{request}"
+          Java::ClojureLang::Keyword.intern("body")    , "hello HTTP! #{rand}"
         ].to_java
 
     return Java::clojure::lang::PersistentHashMap.create(resp)
