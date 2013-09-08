@@ -18,17 +18,17 @@ public class HttpRequest {
     private byte[] body;
 
     // package visible
-    int serverPort = 80;
-    String serverName;
-    Map<String, Object> headers;
-    int contentLength = 0;
-    String contentType;
-    String charset = "utf8";
-    boolean isKeepAlive = false;
-    boolean isWebSocket = false;
+    public int serverPort = 80;
+    public String serverName;
+    public Map<String, Object> headers;
+    public int contentLength = 0;
+    public String contentType;
+    public String charset = "utf8";
+    public boolean isKeepAlive = false;
+    public boolean isWebSocket = false;
 
-    InetSocketAddress remoteAddr;
-    AsyncChannel channel;
+    public InetSocketAddress remoteAddr;
+    public AsyncChannel channel;
 
     public HttpRequest(HttpMethod method, String url, HttpVersion version) {
         this.method = method;
