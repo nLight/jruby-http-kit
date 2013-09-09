@@ -1,3 +1,4 @@
+require 'stringio'
 require 'rack/rewindable_input'
 
 module HttpKit

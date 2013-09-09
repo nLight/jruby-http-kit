@@ -4,12 +4,12 @@ jruby-http-kit
 JRuby wrapper for Clojure HTTP Kit library. Just a  proof of a concept for now.
 
 ```
-jruby -s example.rb 
+jruby -s ring_example.rb
 
 curl -v 0.0.0.0:8089
 ```
 
-MacBook Pro Retina 13" (2.5 GHz i5, 8GB RAM) 
+MacBook Pro Retina 13" (2.5 GHz i5, 8GB RAM)
 
 server runs in irb :)
 
