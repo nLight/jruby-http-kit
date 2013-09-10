@@ -17,7 +17,6 @@ public class HttpRequest {
 
     private byte[] body;
 
-    // package visible
     public int serverPort = 80;
     public String serverName;
     public Map<String, Object> headers;

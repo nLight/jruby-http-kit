@@ -8,8 +8,10 @@ module HttpKit
     def Server.run(app, options = {})
       @lock.synchronize do
         return if @server
-        @server = new(app)
-        @server.start
+        @server = new
+        @server.run(app, options)
+
+        @server
       end
     end
 
@@ -17,14 +19,12 @@ module HttpKit
       @lock.synchronize do
         return unless @server
 
-        @handler.close
         @server.stop
         @handler = nil
-        @server  = nil
       end
     end
 
-    def initialize(app, options={})
+    def run(app, options={})
       options = {
           :host    => "0.0.0.0",
           :port    => 9292,
@@ -32,14 +32,17 @@ module HttpKit
           :queue   => 1000,
         }.merge(options)
 
-      # @handler   = Java::OrgHttpkitServer::RingHandler.new(options[:threads], app, "prefix-", options[:queue])
-      # @handler   = Java::OrgHttpkitServer::RackHandler.new(options[:threads], app, "prefix-", options[:queue])
-      @handler   = HttpKit::RackHandler.new(options[:threads], app, "prefix-", options[:queue])
-      @http_kit  = Java::OrgHttpkitServer::HttpServer.new(options[:host], options[:port], @handler, 80000, 4000)
+      @handler  = HttpKit::RackHandler.new(options[:threads], app, "prefix-", options[:queue])
+      @http_kit = Java::OrgHttpkitServer::HttpServer.new(options[:host], options[:port], @handler, 80000, 4000)
+
+      @http_kit.start
 
       $stdout.printf("HTTP Kit is listening on %s:%s\n", options[:host], options[:port])
 
-      trap("SIGINT") { @http_kit.stop and exit }
+      trap("SIGINT") {
+        @http_kit.stop
+        exit
+      }
     end
 
     def start
@@ -47,8 +50,13 @@ module HttpKit
     end
 
     def stop
+      return unless @http_kit
+      $stdout.print "Stopping Http kit..." unless @options[:quiet]
       @http_kit.stop
+      $stdout.puts "done." unless @options[:quiet]
     end
+
+    alias_method :shutdown, :stop
 
   end
 end
