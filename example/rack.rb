@@ -1,4 +1,4 @@
-$LOAD_PATH << 'lib'
+$LOAD_PATH << '../lib'
 
 require 'http_kit'
 require 'http_kit/server'
