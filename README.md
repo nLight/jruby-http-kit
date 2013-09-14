@@ -4,7 +4,7 @@ jruby-http-kit
 JRuby wrapper for Clojure HTTP Kit library. Just a  proof of a concept for now.
 
 ```
-jruby -s ring_example.rb
+jruby -s ring.rb
 
 curl -v 0.0.0.0:8089
 ```
