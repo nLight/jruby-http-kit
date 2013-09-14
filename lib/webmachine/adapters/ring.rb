@@ -7,11 +7,18 @@ module Webmachine
       java_import Java::OrgHttpkitServer::RingHandler
       java_import Java::OrgHttpkitServer::HttpServer
 
+      STATUS       = Keyword.intern("status")
+      HEADERS      = Keyword.intern("headers")
+      BODY         = Keyword.intern("body")
+      REQUEST_URI  = Keyword.intern("uri")
+      QUERY_STRING = Keyword.intern("query-string")
+      METHOD       = Keyword.intern("request-method")
+
       DEFAULT_OPTIONS = {
-        :port   => 9292,
-        :host   => "0.0.0.0",
-        :threads => 50,
-        :queue_size  => 1000,
+        :port          => 9292,
+        :host          => "0.0.0.0",
+        :threads       => 50,
+        :queue_size    => 1000,
         :worker_prefix => "wm-",
         :max_body_size => 8388608,
         :max_http_line => 4096
@@ -84,23 +91,23 @@ module Webmachine
         end
 
         def headers
-          Webmachine::Headers.from_cgi(@request.get(Keyword.intern("headers")))
+          Webmachine::Headers.from_cgi(@request.get(HEADERS))
         end
 
         def body
-          _body = @request.get( Keyword.intern("body") )
+          _body = @request.get( BODY )
           _body = _body.to_io if _body
         end
 
         def url
-          uri          = @request.get(Keyword.intern("uri"))
-          query_string = @request.get(Keyword.intern("query-string"))
+          uri          = @request.get(REQUEST_URI)
+          query_string = @request.get(QUERY_STRING)
 
           URI.parse("#{uri}?#{query_string}")
         end
 
         def method
-          @request.get(Keyword.intern("request-method")).to_s.delete(':').upcase
+          @request.get(METHOD).to_s.delete(':').upcase
         end
 
         # Map<Object, Object> m = new TreeMap<Object, Object>();
@@ -126,9 +133,9 @@ module Webmachine
       class RingResponse
         def self.create(code, headers, body)
           ring_response = [
-            Keyword.intern("status")  , code,
-            Keyword.intern("headers") , headers,
-            Keyword.intern("body")    , body
+            STATUS  , code,
+            HEADERS , headers,
+            BODY    , body
           ]
 
           return PersistentHashMap.create(ring_response.to_java)
