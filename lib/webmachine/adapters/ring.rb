@@ -67,8 +67,7 @@ module Webmachine
 
           dispatcher.dispatch(request, response)
 
-          headers = response.headers.flatten.to_java(:string)
-          headers = Java::clojure::lang::PersistentHashMap.create(headers)
+          headers = Java::JavaUtil::HashMap.new(response.headers)
 
           Ring::RingResponse.create(response.code, headers, response.body)
         end
