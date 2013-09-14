@@ -2,6 +2,11 @@ module Webmachine
   module Adapters
     class Ring < Webmachine::Adapter
 
+      java_import Java::ClojureLang::Keyword
+      java_import Java::ClojureLang::PersistentHashMap
+      java_import Java::OrgHttpkitServer::RingHandler
+      java_import Java::OrgHttpkitServer::HttpServer
+
       DEFAULT_OPTIONS = {
         :port   => 9292,
         :host   => "0.0.0.0",
@@ -21,16 +26,16 @@ module Webmachine
 
         req_handler = Handler.new(dispatcher)
 
-        @ring_handler = Java::OrgHttpkitServer::RingHandler.new(options[:threads],
-                                                                req_handler,
-                                                                options[:worker_prefix],
-                                                                options[:queue_size])
+        @ring_handler = RingHandler.new(options[:threads],
+                                        req_handler,
+                                        options[:worker_prefix],
+                                        options[:queue_size])
 
-        @server = Java::OrgHttpkitServer::HttpServer.new(options[:host],
-                                                         options[:port].to_i,
-                                                         @ring_handler,
-                                                         options[:max_body_size],
-                                                         options[:max_http_line])
+        @server = HttpServer.new(options[:host],
+                                 options[:port].to_i,
+                                 @ring_handler,
+                                 options[:max_body_size],
+                                 options[:max_http_line])
 
         @server.start()
 
@@ -79,23 +84,23 @@ module Webmachine
         end
 
         def headers
-          Webmachine::Headers.from_cgi(@request.get(Java::ClojureLang::Keyword.intern("headers")))
+          Webmachine::Headers.from_cgi(@request.get(Keyword.intern("headers")))
         end
 
         def body
-          _body = @request.get( Java::ClojureLang::Keyword.intern("body") )
+          _body = @request.get( Keyword.intern("body") )
           _body = _body.to_io if _body
         end
 
         def url
-          uri          = @request.get(Java::ClojureLang::Keyword.intern("uri"))
-          query_string = @request.get(Java::ClojureLang::Keyword.intern("query-string"))
+          uri          = @request.get(Keyword.intern("uri"))
+          query_string = @request.get(Keyword.intern("query-string"))
 
           URI.parse("#{uri}?#{query_string}")
         end
 
         def method
-          @request.get(Java::ClojureLang::Keyword.intern("request-method")).to_s.delete(':').upcase
+          @request.get(Keyword.intern("request-method")).to_s.delete(':').upcase
         end
 
         # Map<Object, Object> m = new TreeMap<Object, Object>();
@@ -121,12 +126,12 @@ module Webmachine
       class RingResponse
         def self.create(code, headers, body)
           ring_response = [
-            Java::ClojureLang::Keyword.intern("status")  , code,
-            Java::ClojureLang::Keyword.intern("headers") , headers,
-            Java::ClojureLang::Keyword.intern("body")    , body
+            Keyword.intern("status")  , code,
+            Keyword.intern("headers") , headers,
+            Keyword.intern("body")    , body
           ]
 
-          return Java::clojure::lang::PersistentHashMap.create(ring_response.to_java)
+          return PersistentHashMap.create(ring_response.to_java)
         end
       end
 
