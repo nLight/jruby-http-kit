@@ -431,9 +431,7 @@ public class HttpUtils {
             if (!CHUNKED.equals(headers.get("Transfer-Encoding"))) {
                 if (bodyBuffer != null) {
                     headers.put(CL, Integer.toString(bodyBuffer.remaining()));
-                } else {
-                    headers.put(CL, "0");
-                }
+                } 
             }
         } catch (IOException e) {
             byte[] b = e.getMessage().getBytes(ASCII);
