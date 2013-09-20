@@ -1,3 +1,5 @@
+.ruby-version
+*.class
 *.sublime-project
 *.sublime-workspace
 *.gem
