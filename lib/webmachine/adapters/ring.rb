@@ -1,11 +1,19 @@
+require 'webmachine/chunked_body'
+
 module Webmachine
   module Adapters
     class Ring < Webmachine::Adapter
 
+      java_import Java::JavaNio::ByteBuffer
+
       java_import Java::ClojureLang::Keyword
       java_import Java::ClojureLang::PersistentHashMap
+
+      java_import Java::OrgHttpkit::DynamicBytes
+      java_import Java::OrgHttpkit::HttpUtils
       java_import Java::OrgHttpkitServer::RingHandler
       java_import Java::OrgHttpkitServer::HttpServer
+
 
       STATUS       = Keyword.intern("status")
       HEADERS      = Keyword.intern("headers")
@@ -79,9 +87,7 @@ module Webmachine
 
           dispatcher.dispatch(request, response)
 
-          headers = Java::JavaUtil::HashMap.new(response.headers)
-
-          Ring::RingResponse.create(response.code, headers, response.body)
+          Ring::RingResponse.from_webmachine(response)
         end
       end
 
@@ -91,23 +97,31 @@ module Webmachine
         end
 
         def headers
-          Webmachine::Headers.from_cgi(@request.get(HEADERS))
+          ruby_headers = {}
+
+          ring_headers = @request.get(Ring::HEADERS)
+          ring_headers.iterator().each do |h|
+            ruby_headers[h[0]] = h[1]
+          end
+
+          Webmachine::Headers[ruby_headers]
         end
 
         def body
-          _body = @request.get( BODY )
-          _body = _body.to_io if _body
+          _body = @request.get( Ring::BODY )
+          puts _body.class
+          _body.to_io.read if _body
         end
 
         def url
-          uri          = @request.get(REQUEST_URI)
-          query_string = @request.get(QUERY_STRING)
+          uri          = @request.get(Ring::REQUEST_URI)
+          query_string = @request.get(Ring::QUERY_STRING)
 
           URI.parse("#{uri}?#{query_string}")
         end
 
         def method
-          @request.get(METHOD).to_s.delete(':').upcase
+          @request.get(Ring::METHOD).to_s.delete(':').upcase
         end
 
         # Map<Object, Object> m = new TreeMap<Object, Object>();
@@ -131,11 +145,40 @@ module Webmachine
       end
 
       class RingResponse
-        def self.create(code, headers, body)
+        def self.from_webmachine(response)
+          headers = response.headers
+          headers.delete("Content-Length")
+
+          response_body = if response.body.respond_to?(:call)
+                            Webmachine::ChunkedBody.new([response.body.call])
+                          elsif response.body.respond_to?(:each)
+                            # This might be an IOEncoder with a Content-Length, which shouldn't be chunked.
+                            if response.headers["Transfer-Encoding"] == "chunked"
+                              Webmachine::ChunkedBody.new(response.body)
+                            else
+                              response.body
+                            end
+                          elsif response.body.is_a? IO
+                            response.body.to_outputstream
+                          else
+                            response.body
+                          end
+
+          if response_body.respond_to?(:each)
+            ring_body = ""
+            response_body.each do |chunk|
+              ring_body << chunk.to_s
+            end
+          else
+            ring_body = response_body
+          end
+
+          headers = Java::JavaUtil::HashMap.new(headers)
+
           ring_response = [
-            STATUS  , code,
-            HEADERS , headers,
-            BODY    , body
+            Ring::STATUS  , response.code,
+            Ring::HEADERS , headers,
+            Ring::BODY    , ring_body
           ]
 
           return PersistentHashMap.create(ring_response.to_java)
