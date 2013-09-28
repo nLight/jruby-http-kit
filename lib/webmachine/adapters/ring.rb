@@ -110,7 +110,7 @@ module Webmachine
 
         def body
           _body = @request.get( Ring::BODY )
-          _body.to_io.read if _body
+          RingRequest::Body.new(_body.to_io) if _body
         end
 
         def url
@@ -123,25 +123,30 @@ module Webmachine
         def method
           @request.get(Ring::METHOD).to_s.delete(':').upcase
         end
+      end
 
-        # Map<Object, Object> m = new TreeMap<Object, Object>();
-#         m.put(SERVER_PORT, req.serverPort);
-#         m.put(SERVER_NAME, req.serverName);
-#         m.put(REMOTE_ADDR, req.getRemoteAddr());
-#         m.put(URI, req.uri);
-#         m.put(SCHEME, HTTP); // only http is supported
-#         m.put(ASYC_CHANNEL, req.channel);
-#         m.put(WEBSOCKET, req.isWebSocket);
-#         m.put(REQUEST_METHOD, req.method.KEY);
+      class RingRequest::Body
+        def initialize(body)
+          @body = body
+        end
 
-#         // key is already lower cased, required by ring spec
-#         m.put(HEADERS, PersistentArrayMap.create(req.headers));
-#         m.put(CONTENT_TYPE, req.contentType);
-#         m.put(CONTENT_LENGTH, req.contentLength);
-#         m.put(CHARACTER_ENCODING, req.charset);
-#         m.put(BODY, req.getBody());
-#         return PersistentArrayMap.create(m);
+        def to_s
+          if @value
+            @value.join
+          else
+            @body.rewind
+            @body.read
+          end
+        end
 
+        def each
+          if @value
+            @value.each {|chunk| yield chunk }
+          else
+            @value = []
+            @body.each {|chunk| @value << chunk; yield chunk }
+          end
+        end
       end
 
       class RingResponse
