@@ -147,7 +147,13 @@ module Webmachine
       class RingResponse
         def self.from_webmachine(response)
           headers = response.headers
+
+          # HTTP-Kit sets its own Content-Length
           headers.delete("Content-Length")
+
+          headers.each do |k, v|
+            headers[k] = v.join(", ") if v.is_a? Array
+          end
 
           response_body = if response.body.respond_to?(:call)
                             Webmachine::ChunkedBody.new([response.body.call])
