@@ -1,3 +1,4 @@
+require 'webmachine/adapter'
 require 'webmachine/chunked_body'
 
 module Webmachine
@@ -109,15 +110,14 @@ module Webmachine
 
         def body
           _body = @request.get( Ring::BODY )
-          puts _body.class
           _body.to_io.read if _body
         end
 
         def url
           uri          = @request.get(Ring::REQUEST_URI)
           query_string = @request.get(Ring::QUERY_STRING)
-
-          URI.parse("#{uri}?#{query_string}")
+          uri << "?#{query_string}" if query_string && query_string != ""
+          URI.parse(uri)
         end
 
         def method
