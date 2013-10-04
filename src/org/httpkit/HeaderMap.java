@@ -1,8 +1,5 @@
 package org.httpkit;
 
-import clojure.lang.ISeq;
-import clojure.lang.Seqable;
-
 import java.util.Arrays;
 import java.util.Map;
 
@@ -82,16 +79,18 @@ public class HeaderMap {
                 bytes.append((String) v, HttpUtils.UTF_8);
                 bytes.append(CR, LF);
                 // ring spec says it could be a seq
-            } else if (v instanceof Seqable) {
-                ISeq seq = ((Seqable) v).seq();
-                while (seq != null) {
-                    bytes.append(k);
-                    bytes.append(COLON, SP);
-                    bytes.append(seq.first().toString(), HttpUtils.UTF_8);
-                    bytes.append(CR, LF);
-                    seq = seq.next();
-                }
             }
+            // TODO: Replace with java
+            // else if (v instanceof Seqable) {
+            //     ISeq seq = ((Seqable) v).seq();
+            //     while (seq != null) {
+            //         bytes.append(k);
+            //         bytes.append(COLON, SP);
+            //         bytes.append(seq.first().toString(), HttpUtils.UTF_8);
+            //         bytes.append(CR, LF);
+            //         seq = seq.next();
+            //     }
+            // }
         }
         bytes.append(CR, LF);
     }

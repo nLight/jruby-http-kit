@@ -1,6 +1,5 @@
 package org.httpkit.server;
 
-import clojure.lang.*;
 import org.httpkit.HeaderMap;
 import org.httpkit.HttpUtils;
 import org.httpkit.PrefixThreadFactory;
@@ -11,7 +10,6 @@ import java.util.TreeMap;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static clojure.lang.Keyword.intern;
 import static org.httpkit.HttpUtils.HttpEncode;
 import static org.httpkit.HttpVersion.HTTP_1_0;
 import static org.httpkit.server.Rack.*;
@@ -22,26 +20,26 @@ import static org.httpkit.server.Frame.TextFrame;
 @SuppressWarnings({"rawtypes", "unchecked"})
 class Rack {
 
-    static final Keyword SERVER_PORT = intern("server-port");
-    static final Keyword SERVER_NAME = intern("server-name");
-    static final Keyword REMOTE_ADDR = intern("remote-addr");
-    static final Keyword URI = intern("uri");
-    static final Keyword QUERY_STRING = intern("query-string");
-    static final Keyword SCHEME = intern("scheme");
-    static final Keyword REQUEST_METHOD = intern("request-method");
-    static final Keyword HEADERS = intern("headers");
-    static final Keyword CONTENT_TYPE = intern("content-type");
-    static final Keyword CONTENT_LENGTH = intern("content-length");
-    static final Keyword CHARACTER_ENCODING = intern("character-encoding");
-    static final Keyword BODY = intern("body");
-    static final Keyword WEBSOCKET = intern("websocket?");
-    static final Keyword ASYC_CHANNEL = intern("async-channel");
+    static final String SERVER_PORT = "server-port";
+    static final String SERVER_NAME = "server-name";
+    static final String REMOTE_ADDR = "remote-addr";
+    static final String URI = "uri";
+    static final String QUERY_STRING = "query-string";
+    static final String SCHEME = "scheme";
+    static final String REQUEST_METHOD = "request-method";
+    static final String HEADERS = "headers";
+    static final String CONTENT_TYPE = "content-type";
+    static final String CONTENT_LENGTH = "content-length";
+    static final String CHARACTER_ENCODING = "character-encoding";
+    static final String BODY = "body";
+    static final String WEBSOCKET = "websocket?";
+    static final String ASYC_CHANNEL = "async-channel";
 
-    static final Keyword HTTP = intern("http");
+    static final String HTTP = "http";
 
-    static final Keyword STATUS = intern("status");
+    static final String STATUS = "status";
 
-    public static int getStatus(Map<Keyword, Object> resp) {
+    public static int getStatus(Map<String, Object> resp) {
         int status = 200;
         Object s = resp.get(STATUS);
         if (s instanceof Long) {
@@ -159,7 +157,7 @@ class Rack {
 //             if (resp_arr == null) { // handler return null
 //                 cb.run(HttpEncode(404, new HeaderMap(), null));
 //             } else {
-//                 Map<Keyword, Object> resp = new TreeMap<Keyword, Object>();
+//                 Map<String, Object> resp = new TreeMap<String, Object>();
 
 //                 resp.put(STATUS  , resp_arr[0]);
 //                 resp.put(HEADERS , PersistentArrayMap.create((Map) resp_arr[1]));

@@ -7,21 +7,17 @@ module Webmachine
 
       java_import Java::JavaNio::ByteBuffer
 
-      java_import Java::ClojureLang::Keyword
-      java_import Java::ClojureLang::PersistentHashMap
-
       java_import Java::OrgHttpkit::DynamicBytes
       java_import Java::OrgHttpkit::HttpUtils
       java_import Java::OrgHttpkitServer::RingHandler
       java_import Java::OrgHttpkitServer::HttpServer
 
-
-      STATUS       = Keyword.intern("status")
-      HEADERS      = Keyword.intern("headers")
-      BODY         = Keyword.intern("body")
-      REQUEST_URI  = Keyword.intern("uri")
-      QUERY_STRING = Keyword.intern("query-string")
-      METHOD       = Keyword.intern("request-method")
+      STATUS       = "status"
+      HEADERS      = "headers"
+      BODY         = "body"
+      REQUEST_URI  = "uri"
+      QUERY_STRING = "query-string"
+      METHOD       = "request-method"
 
       DEFAULT_OPTIONS = {
         :port          => 9292,
@@ -68,7 +64,7 @@ module Webmachine
 
 
       class Handler
-        include Java::ClojureLang::IFn
+        include Java::OrgHttpkitServer::IRubyHandler
 
         attr_reader :dispatcher
 
@@ -76,7 +72,7 @@ module Webmachine
           @dispatcher = dispatcher
         end
 
-        def invoke(request)
+        def call(request)
           ring_request = Ring::RingRequest.new(request)
 
           request = Webmachine::Request.new(ring_request.method,
@@ -101,7 +97,7 @@ module Webmachine
           ruby_headers = {}
 
           ring_headers = @request.get(Ring::HEADERS)
-          ring_headers.iterator().each do |h|
+          ring_headers.each do |h|
             ruby_headers[h[0]] = h[1]
           end
 
@@ -186,13 +182,11 @@ module Webmachine
 
           headers = Java::JavaUtil::HashMap.new(headers)
 
-          ring_response = [
-            Ring::STATUS  , response.code,
-            Ring::HEADERS , headers,
-            Ring::BODY    , ring_body
-          ]
-
-          return PersistentHashMap.create(ring_response.to_java)
+          {
+            Ring::STATUS  => response.code,
+            Ring::HEADERS => headers,
+            Ring::BODY    => ring_body
+          }
         end
       end
 

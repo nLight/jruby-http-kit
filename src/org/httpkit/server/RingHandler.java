@@ -1,44 +1,43 @@
 package org.httpkit.server;
 
-import clojure.lang.*;
 import org.httpkit.HeaderMap;
 import org.httpkit.HttpUtils;
 import org.httpkit.PrefixThreadFactory;
+import org.httpkit.server.IRubyHandler;
 
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static clojure.lang.Keyword.intern;
 import static org.httpkit.HttpUtils.HttpEncode;
 import static org.httpkit.HttpVersion.HTTP_1_0;
 import static org.httpkit.server.ClojureRing.*;
 import static org.httpkit.server.Frame.TextFrame;
 
-@SuppressWarnings({"rawtypes", "unchecked"})
+@SuppressWarnings({"rawtypes"})
 class ClojureRing {
 
-    static final Keyword SERVER_PORT = intern("server-port");
-    static final Keyword SERVER_NAME = intern("server-name");
-    static final Keyword REMOTE_ADDR = intern("remote-addr");
-    static final Keyword URI = intern("uri");
-    static final Keyword QUERY_STRING = intern("query-string");
-    static final Keyword SCHEME = intern("scheme");
-    static final Keyword REQUEST_METHOD = intern("request-method");
-    static final Keyword HEADERS = intern("headers");
-    static final Keyword CONTENT_TYPE = intern("content-type");
-    static final Keyword CONTENT_LENGTH = intern("content-length");
-    static final Keyword CHARACTER_ENCODING = intern("character-encoding");
-    static final Keyword BODY = intern("body");
-    static final Keyword WEBSOCKET = intern("websocket?");
-    static final Keyword ASYC_CHANNEL = intern("async-channel");
+    static final String SERVER_PORT = "server-port";
+    static final String SERVER_NAME = "server-name";
+    static final String REMOTE_ADDR = "remote-addr";
+    static final String URI = "uri";
+    static final String QUERY_STRING = "query-string";
+    static final String SCHEME = "scheme";
+    static final String REQUEST_METHOD = "request-method";
+    static final String HEADERS = "headers";
+    static final String CONTENT_TYPE = "content-type";
+    static final String CONTENT_LENGTH = "content-length";
+    static final String CHARACTER_ENCODING = "character-encoding";
+    static final String BODY = "body";
+    static final String WEBSOCKET = "websocket?";
+    static final String ASYC_CHANNEL = "async-channel";
 
-    static final Keyword HTTP = intern("http");
+    static final String HTTP = "http";
 
-    static final Keyword STATUS = intern("status");
+    static final String STATUS = "status";
 
-    public static int getStatus(Map<Keyword, Object> resp) {
+    public static int getStatus(Map<String, Object> resp) {
         int status = 200;
         Object s = resp.get(STATUS);
         if (s instanceof Long) {
@@ -49,7 +48,7 @@ class ClojureRing {
         return status;
     }
 
-    public static IPersistentMap buildRequestMap(HttpRequest req) {
+    public static Map buildRequestMap(HttpRequest req) {
         // ring spec
         Map<Object, Object> m = new TreeMap<Object, Object>();
         m.put(SERVER_PORT, req.serverPort);
@@ -63,12 +62,13 @@ class ClojureRing {
         m.put(REQUEST_METHOD, req.method.KEY);
 
         // key is already lower cased, required by ring spec
-        m.put(HEADERS, PersistentArrayMap.create(req.headers));
+        m.put(HEADERS, req.headers);
         m.put(CONTENT_TYPE, req.contentType);
         m.put(CONTENT_LENGTH, req.contentLength);
         m.put(CHARACTER_ENCODING, req.charset);
         m.put(BODY, req.getBody());
-        return PersistentArrayMap.create(m);
+
+        return m;
     }
 }
 
@@ -78,9 +78,9 @@ class HttpHandler implements Runnable {
 
     final HttpRequest req;
     final RespCallback cb;
-    final IFn handler;
+    final IRubyHandler handler;
 
-    public HttpHandler(HttpRequest req, RespCallback cb, IFn handler) {
+    public HttpHandler(HttpRequest req, RespCallback cb, IRubyHandler handler) {
         this.req = req;
         this.cb = cb;
         this.handler = handler;
@@ -88,7 +88,7 @@ class HttpHandler implements Runnable {
 
     public void run() {
         try {
-            Map resp = (Map) handler.invoke(buildRequestMap(req));
+            Map resp = (Map) handler.call(buildRequestMap(req));
             if (resp == null) { // handler return null
                 cb.run(HttpEncode(404, new HeaderMap(), null));
             } else {
@@ -149,9 +149,9 @@ class WSHandler implements Runnable {
 
 public class RingHandler implements IHandler {
     final ExecutorService execs;
-    final IFn handler;
+    final IRubyHandler handler;
 
-    public RingHandler(int thread, IFn handler, String prefix, int queueSize) {
+    public RingHandler(int thread, IRubyHandler handler, String prefix, int queueSize) {
         PrefixThreadFactory factory = new PrefixThreadFactory(prefix);
         BlockingQueue<Runnable> queue = new ArrayBlockingQueue<Runnable>(queueSize);
         execs = new ThreadPoolExecutor(thread, thread, 0, TimeUnit.MILLISECONDS, queue, factory);

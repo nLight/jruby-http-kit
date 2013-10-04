@@ -1,7 +1,6 @@
 package org.httpkit.server;
 
-import clojure.lang.IFn;
-import clojure.lang.Keyword;
+import org.httpkit.server.IRubyHandler;
 import org.httpkit.DynamicBytes;
 import org.httpkit.HeaderMap;
 import org.httpkit.HttpVersion;
@@ -37,8 +36,8 @@ public class AsyncChannel {
     // streaming
     private volatile int isHeaderSent = 0;
 
-    private volatile IFn receiveHandler = null;
-    volatile IFn closeHandler = null;
+    private volatile IRubyHandler receiveHandler = null;
+    volatile IRubyHandler closeHandler = null;
 
     static {
         try {
@@ -94,7 +93,7 @@ public class AsyncChannel {
         Object body = data;
         HeaderMap headers;
         if (data instanceof Map) {
-            Map<Keyword, Object> resp = (Map<Keyword, Object>) data;
+            Map<String, Object> resp = (Map<String, Object>) data;
             headers = HeaderMap.camelCase((Map) resp.get(HEADERS));
             status = getStatus(resp);
             body = resp.get(BODY);
@@ -131,7 +130,7 @@ public class AsyncChannel {
 
     private void writeChunk(Object body, boolean close) throws IOException {
         if (body instanceof Map) { // only get body if a map
-            body = ((Map<Keyword, Object>) body).get(BODY);
+            body = ((Map<String, Object>) body).get(BODY);
         }
         if (body != null) { // null is ignored
             ByteBuffer buffers[];
@@ -147,16 +146,16 @@ public class AsyncChannel {
         }
     }
 
-    public void setReceiveHandler(IFn fn) {
+    public void setReceiveHandler(IRubyHandler fn) {
         if (!unsafe.compareAndSwapObject(this, receiveHandlerOffset, null, fn)) {
             throw new IllegalStateException("receive handler exist: " + receiveHandler);
         }
     }
 
     public void messageReceived(final Object mesg) {
-        IFn f = receiveHandler;
+        IRubyHandler f = receiveHandler;
         if (f != null) {
-            f.invoke(mesg); // byte[] or String
+            f.call(mesg); // byte[] or String
         }
     }
 
@@ -165,20 +164,20 @@ public class AsyncChannel {
         server.tryWrite(key, HttpEncode(101, map, null));
     }
 
-    public void setCloseHandler(IFn fn) {
+    public void setCloseHandler(IRubyHandler fn) {
         if (!unsafe.compareAndSwapObject(this, closeHandlerOffset, null, fn)) { // only once
             throw new IllegalStateException("close handler exist: " + closeHandler);
         }
         if (closedRan == 1) { // no handler, but already closed
-            fn.invoke(K_UNKNOWN);
+            fn.call(K_UNKNOWN);
         }
     }
 
     public void onClose(int status) {
         if (unsafe.compareAndSwapInt(this, closedRanOffset, 0, 1)) {
-            IFn f = closeHandler;
+            IRubyHandler f = closeHandler;
             if (f != null) {
-                f.invoke(readable(status));
+                f.call(readable(status));
             }
         }
     }
@@ -194,9 +193,9 @@ public class AsyncChannel {
         } else {
             server.tryWrite(key, ByteBuffer.wrap(finalChunkBytes));
         }
-        IFn f = closeHandler;
+        IRubyHandler f = closeHandler;
         if (f != null) {
-            f.invoke(readable(0)); // server close is 0
+            f.call(readable(0)); // server close is 0
         }
         return true;
     }
@@ -208,7 +207,7 @@ public class AsyncChannel {
 
         if (isWebSocket()) {
             if (data instanceof Map) { // only get the :body if map
-                Object tmp = ((Map<Keyword, Object>) data).get(BODY);
+                Object tmp = ((Map<String, Object>) data).get(BODY);
                 if (tmp != null) { // save contains(BODY) && get(BODY)
                     data = tmp;
                 }
@@ -254,18 +253,18 @@ public class AsyncChannel {
         return closedRan == 1;
     }
 
-    static Keyword K_BY_SERVER = Keyword.intern("server-close");
-    static Keyword K_CLIENT_CLOSED = Keyword.intern("client-close");
+    static String K_BY_SERVER = "server-close";
+    static String K_CLIENT_CLOSED = "client-close";
 
     // http://datatracker.ietf.org/doc/rfc6455/?include_text=1
     // 7.4.1. Defined Status Codes
-    static Keyword K_WS_1000 = Keyword.intern("normal");
-    static Keyword K_WS_1001 = Keyword.intern("going-away");
-    static Keyword K_WS_1002 = Keyword.intern("protocol-error");
-    static Keyword K_WS_1003 = Keyword.intern("unsupported");
-    static Keyword K_UNKNOWN = Keyword.intern("unknown");
+    static String K_WS_1000 = "normal";
+    static String K_WS_1001 = "going-away";
+    static String K_WS_1002 = "protocol-error";
+    static String K_WS_1003 = "unsupported";
+    static String K_UNKNOWN = "unknown";
 
-    private static Keyword readable(int status) {
+    private static String readable(int status) {
         switch (status) {
             case 0:
                 return K_BY_SERVER;

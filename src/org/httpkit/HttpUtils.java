@@ -1,9 +1,5 @@
 package org.httpkit;
 
-import clojure.lang.ISeq;
-import clojure.lang.PersistentList;
-import clojure.lang.Seqable;
-
 import java.io.*;
 import java.net.*;
 import java.nio.ByteBuffer;
@@ -97,14 +93,15 @@ public class HttpUtils {
         } else if (body instanceof File) {
             // serving file is better be done by Nginx
             return readAll((File) body);
-        } else if (body instanceof Seqable) {
-            ISeq seq = ((Seqable) body).seq();
-            DynamicBytes b = new DynamicBytes(seq.count() * 512);
-            while (seq != null) {
-                b.append(seq.first().toString(), UTF_8);
-                seq = seq.next();
-            }
-            return ByteBuffer.wrap(b.get(), 0, b.length());
+        // TODO: replace with java
+        // } else if (body instanceof Seqable) {
+        //     ISeq seq = ((Seqable) body).seq();
+        //     DynamicBytes b = new DynamicBytes(seq.count() * 512);
+        //     while (seq != null) {
+        //         b.append(seq.first().toString(), UTF_8);
+        //         seq = seq.next();
+        //     }
+        //     return ByteBuffer.wrap(b.get(), 0, b.length());
             // makes ultimate optimization possible: no copy
         } else if (body instanceof ByteBuffer) {
             return (ByteBuffer) body;
@@ -352,9 +349,9 @@ public class HttpUtils {
                 headers.put(key, value);
             } else {
                 if (v instanceof String) {
-                    headers.put(key, PersistentList.create(Arrays.asList((String) v, value)));
+                    headers.put(key, Arrays.asList((String) v, value));
                 } else {
-                    headers.put(key, ((ISeq)v).cons(value));
+                    headers.put(key, ((List)v).add(value));
                 }
             }
         }
@@ -431,7 +428,7 @@ public class HttpUtils {
             if (!CHUNKED.equals(headers.get("Transfer-Encoding"))) {
                 if (bodyBuffer != null) {
                     headers.put(CL, Integer.toString(bodyBuffer.remaining()));
-                } 
+                }
             }
         } catch (IOException e) {
             byte[] b = e.getMessage().getBytes(ASCII);
