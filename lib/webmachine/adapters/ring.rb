@@ -36,11 +36,11 @@ module Webmachine
       # Start the Rack adapter
       def run
         options = DEFAULT_OPTIONS.merge({
-          :port => configuration.port,
-          :host => configuration.ip
-        }).merge(configuration.adapter_options)
+          :port => application.configuration.port,
+          :host => application.configuration.ip
+        }).merge(application.configuration.adapter_options)
 
-        req_handler = Handler.new(dispatcher)
+        req_handler = Handler.new(application)
 
         @ring_handler = RingHandler.new(options[:threads],
                                         req_handler,
@@ -70,10 +70,10 @@ module Webmachine
       class Handler
         include Java::ClojureLang::IFn
 
-        attr_reader :dispatcher
+        attr_reader :application
 
-        def initialize(dispatcher)
-          @dispatcher = dispatcher
+        def initialize(application)
+          @application = application
         end
 
         def invoke(request)
@@ -86,7 +86,7 @@ module Webmachine
 
           response = Webmachine::Response.new
 
-          dispatcher.dispatch(request, response)
+          application.dispatcher.dispatch(request, response)
 
           Ring::RingResponse.from_webmachine(response)
         end
